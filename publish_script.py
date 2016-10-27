@@ -80,23 +80,28 @@ def on_message(client, userdata, msg):
     try:
         #print ("From topic: " + msg.topic + " , received: " + str(msg.payload))
         print ("From topic: " + msg.topic + " , received: ")
-        print (msg.payload)
+        # print (msg.payload)
         unpacked = decode_bitstruct(msg.payload, c)
         print unpacked
         N = unpacked[0]
+        initial_time = unpacked[1]
+
         for i in range(N):
-            id = unpacked[i+1]
-            value = unpacked[i+N+1]
-            print (id, value)
-            timestring =  datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-            publish(HOST_ECLIPSE, c["event"][i]["name"], value, timestring)
+            id = unpacked[i+2]
+            value = unpacked[i + N + 2]
+            time_offset = unpacked[i + N*2 + 2]
+            print ("Publishing now: ", id, value, time_offset)
+            time = initial_time + (time_offset/10000.0)
+            timestring =  datetime.datetime.fromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S.%f')
+            #timestring = time.time()
+            publish(HOST_IQUEUE, c["event"][i]["name"], value, timestring)
     except:
         traceback.print_exc()
         print ("Error")
 
 
 
-def publish(hostname, event, value,  timestamp, device_id="100", prio_class="low", prio_value=10):
+def publish(hostname, event, value,  timestamp, device_id="74da382afd91", prio_class="low", prio_value=10):
     d = {"d:":
             {
                 "timestamp": timestamp,
@@ -126,22 +131,25 @@ def publish(hostname, event, value,  timestamp, device_id="100", prio_class="low
 
 def decode_bitstruct(packed_bytes, c):
 
-    format_str_N = "u8"
-    # how many readings ahead, 8 bits
-    N = unpack(format_str_N, packed_bytes)[0]
+    fmt_decode = "u8f32"    # how many readings ahead 8 bits unsigned, initial timestamp 32 bits float
+    N = unpack(fmt_decode, packed_bytes)[0]
+    # initial_time = unpack(fmt_decode, packed_bytes)[1]
 
-    format_str_array_sensor = ""
     # each id is 4 bits
     for i in range(N):
-        format_str_array_sensor += "u4"
+        fmt_decode += "u4"
 
-    unpacked2 = unpack(format_str_N + format_str_array_sensor, packed_bytes)
-    array_sensor_ids = unpacked2[1:]
-    format_str_sensor_sizes = ""
-    for i in array_sensor_ids:
-        format_str_sensor_sizes +=  str(c["event"][i]["dtype"]) + str(c["event"][i]["size"])
+    unpacked2 = unpack(fmt_decode, packed_bytes)
 
-    unpacked3 = unpack(format_str_N + format_str_array_sensor + format_str_sensor_sizes, packed_bytes)
+    list_of_sensor_ids = unpacked2[2:(2+N+1)]
+    #list_of_offsets = unpacked2[(2+N):]
+
+    for i in list_of_sensor_ids:
+        fmt_decode += str(c["event"][i]["dtype"]) + str(c["event"][i]["size"])
+    for i in range(N):
+        fmt_decode += "u16"
+
+    unpacked3 = unpack(fmt_decode, packed_bytes)
     return unpacked3
 
 

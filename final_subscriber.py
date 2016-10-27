@@ -1,5 +1,8 @@
 import paho.mqtt.client as mqtt
 
+HOST_ECLIPSE = "iot.eclipse.org"
+HOST_IQUEUE = "iqueue.ics.uci.edu"
+HOST = HOST_IQUEUE
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -19,7 +22,7 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-client.connect("iot.eclipse.org", 1883, 60)
+client.connect(HOST, 1883, 60)
 
 # Blocking call that processes network traffic, dispatches callbacks and
 # handles reconnecting.

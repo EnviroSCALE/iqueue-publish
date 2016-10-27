@@ -7,6 +7,8 @@ from socket import *
 from bitstruct import *
 import json
 
+HOST_ECLIPSE = "iot.eclipse.org"
+
 '''
 # size : how many bits
 # id : index of event in json
@@ -99,8 +101,12 @@ def extract_queue_and_encode(self):
     # Part 2: Encoding elements in "queue_copy" and return a python "struct" object
     N = len(queue_copy)
     data = []
-    data.append(N)
+
     fmt_string = "u8"   # number of readings bundled together is assumed to be in range 0-255, hence 8 bits
+    data.append(N)
+
+    fmt_string += "f32"  # initial timestamp
+    data.append(queue_copy[0][2])
 
     # append the event ids
     for queue_elem in queue_copy:
@@ -113,6 +119,16 @@ def extract_queue_and_encode(self):
         id = queue_elem[0]
         fmt_string += str(c["event"][id]["dtype"]) + str(c["event"][id]["size"])
         data.append(queue_elem[1])
+
+    # append the timestamp offsets
+    for queue_elem in queue_copy:
+        id = queue_elem[0]
+        time_actual = queue_elem[2]
+        time_offset = int((time_actual - queue_copy[0][2])*10000)
+        print (time_actual - queue_copy[0][2])
+        print (time_offset)
+        fmt_string += "u16"
+        data.append(time_offset)
     packed = pack(fmt_string, *data)
     return packed
 
@@ -121,7 +137,7 @@ def publish_packet_raw(message):
     try:
         msgs = [{'topic': "paho/test/iotBUET/bulk_raw/", 'payload': message},
                 ("paho/test/multiple", "multiple 2", 0, False)]
-        pub.multiple(msgs, hostname="iot.eclipse.org")
+        pub.multiple(msgs, hostname=HOST_ECLIPSE)
         return True
 
     except gaierror:
