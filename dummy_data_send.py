@@ -157,11 +157,21 @@ newq.put((2, 32, time.time()))
 time.sleep(1)
 newq.put((3, 32, time.time()))
 time.sleep(1)
-newq.put((4, 32, time.time()))
+newq.put((4, 12, time.time()))
 newq.put((5, 23.353, time.time()))
 
 packed = extract_queue_and_encode(newq)
 while 1:
     publish_packet_raw(bytearray(packed))
+    newFileBytes = bytearray(packed)
+    directoryPath = "logs/"
+    fileName = "missing.bin"
+    # make file
+    newFile = open(directoryPath + fileName , "a")
+    # write to file
+    newFile.write(newFileBytes)
+    newFile.write("\n")
+
+
     print "Sent"
     time.sleep(3)
