@@ -7,7 +7,7 @@ from socket import *
 from bitstruct import *
 import json
 
-HOST_ECLIPSE = "iot.eclipse.org"
+HOST_ECLIPSE = "iqueue.ics.uci.edu"
 
 '''
 # size : how many bits
@@ -135,7 +135,7 @@ def extract_queue_and_encode(self):
 
 def publish_packet_raw(message):
     try:
-        msgs = [{'topic': "paho/test/iotBUET/bulk_raw/", 'payload': message},
+        msgs = [{'topic': "paho2/test/iotBUET/bulk_raw/", 'payload': message},
                 ("paho/test/multiple", "multiple 2", 0, False)]
         pub.multiple(msgs, hostname=HOST_ECLIPSE)
         return True
@@ -163,14 +163,7 @@ newq.put((5, 23.353, time.time()))
 packed = extract_queue_and_encode(newq)
 while 1:
     publish_packet_raw(bytearray(packed))
-    newFileBytes = bytearray(packed)
-    directoryPath = "logs/"
-    fileName = "missing.bin"
-    # make file
-    newFile = open(directoryPath + fileName , "a")
-    # write to file
-    newFile.write(newFileBytes)
-    newFile.write("\n")
+
 
 
     print "Sent"

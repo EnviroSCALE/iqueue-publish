@@ -1,5 +1,7 @@
 import paho.mqtt.client as mqttClient
 import paho.mqtt.publish as pub
+import sqlite_db
+
 from bitstruct import *
 import time
 import datetime
@@ -137,11 +139,16 @@ def on_message(client, userdata, msg):
             id = unpacked[i+2]
             value = unpacked[i + N + 2]
             time_offset = unpacked[i + N*2 + 2]
+            lat = unpacked[2 + i*3 + (N)*3]
+            lon = unpacked[2 + i*3 + (N)*3 + 1]
+            alt = unpacked[2 + i*3 + (N)*3 + 2]
+            print ("lat", lat, "lin ", lon, "alt", alt)
+
             print ("Publishing now: ", id, value, time_offset)
-            time = initial_time + (time_offset/10000.0)
+            time = initial_time + (time_offset)
             #timestring =  datetime.datetime.fromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S.%f')
             timestring = time
-            publish(HOST_IQUEUE, c["event"][i]["name"], value, timestring)
+            publish(HOST_IQUEUE, c["event"][id]["name"], value, timestring, lat, lon, alt)
     except:
         traceback.print_exc()
         print ("Error")
@@ -149,7 +156,12 @@ def on_message(client, userdata, msg):
 
 #PCMAC:  d0df9a95296c (d0:df:9a:95:29:6c)
 #PiMac:  74da382afd91
-def publish(hostname, event, value,  timestamp, lat =None, lon =None, alt =None, device_id="74da382afd91", prio_class="low", prio_value=10 ):
+def publish(hostname, event, value,  timestamp, lat, lon, alt, device_id="74da382afd91", prio_class="low", prio_value=10 ):
+    if lat == -1:
+        lat = None
+        lon = None
+        alt = None
+
     d = {"d":
             {
                 "timestamp": timestamp,
@@ -164,16 +176,18 @@ def publish(hostname, event, value,  timestamp, lat =None, lon =None, alt =None,
                 }
             }
         }
+    sqlite_db.insert(timestamp, event, value,prio_class,prio_value, lat, alt, lon)
     jsonstr = json.dumps(d)
     msg = jsonstr
 
     try:
         # "iot-1/d/801f02da69bc/evt/light/json"
-        topic = "iot-1/dd/" + device_id + "/evt/" + event + "/json"
+        topic = "iot-1/d/" + device_id + "/evt/" + event + "/json"
         #topic = "paho/test/iotBUET/bulk/"
         msgs = [{'topic': topic, 'payload': msg},
                 ("paho/test/multiple", "multiple 2", 0, False)]
         pub.single(topic, payload=msg, hostname=hostname, port=1883)
+        pub.single(topic+"plotly" , payload=msg, hostname=hostname, port=1883 )
         return True
     except:
         print ("error")
@@ -188,7 +202,7 @@ def decode_bitstruct(packed_bytes, c):
     fmt_decode = "u8"    # how many readings ahead 8 bits unsigned, initial timestamp 32 bits float
     N = unpack(fmt_decode, packed_bytes)[0]
     print(N)
-    fmt_decode += "f32"
+    fmt_decode += "u32"
     # initial_time = unpack(fmt_decode, packed_bytes)[1]
 
     # each id is 4 bits
@@ -204,6 +218,8 @@ def decode_bitstruct(packed_bytes, c):
         fmt_decode += str(c["event"][i]["dtype"]) + str(c["event"][i]["size"])
     for i in range(N):
         fmt_decode += "u16"
+    for i in range(N):
+        fmt_decode += "f32f32f32"
 
     unpacked3 = unpack(fmt_decode, packed_bytes)
     return unpacked3
