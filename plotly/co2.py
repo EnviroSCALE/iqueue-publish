@@ -9,14 +9,14 @@ import datetime
 import time
 
 stream_id = {}
-#stream_ids = ["2m6f6eq1bo", "qexgcccyuy", "kd4s18sz34", "kmunx5u0g8", "tjhuxxhfui", "vdec67rhyu"]
+stream_ids = ["2m6f6eq1bo", "qexgcccyuy", "kd4s18sz34", "kmunx5u0g8", "tjhuxxhfui", "vdec67rhyu"]
 stream_obj = {}
 trace = {}
 s = {}
 
 plotly.tools.set_credentials_file(username='enviro_scale', api_key='xxjrfn3fqa')
 ##use it to import credentials
-stream_ids = tls.get_credentials_file()['stream_ids']
+#stream_ids = tls.get_credentials_file()['stream_ids']
 print stream_ids
 
 def map_sensor_id_to_title(x):

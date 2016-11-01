@@ -24,7 +24,7 @@ d = {
     "event":
         [
             {"name": "temperature",
-             "size": 8,
+             "size": 10,
              "dtype": 's',
              "sensor": "dht11"
              },
@@ -151,7 +151,7 @@ def on_message(client, userdata, msg):
             publish(HOST_IQUEUE, c["event"][id]["name"], value, timestring, lat, lon, alt)
     except:
         traceback.print_exc()
-        print ("Error")
+        print ("MQTT publish error")
 
 
 #PCMAC:  d0df9a95296c (d0:df:9a:95:29:6c)
